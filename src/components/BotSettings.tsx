@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Bot } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import { Bot, MODEL_OPTIONS } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,13 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface BotSettingsProps {
   bot: Bot | null;
@@ -24,6 +31,23 @@ export const BotSettings = ({ bot, onSave, open, onOpenChange }: BotSettingsProp
   const [description, setDescription] = useState(bot?.description || '');
   const [systemPrompt, setSystemPrompt] = useState(bot?.systemPrompt || '');
   const [color, setColor] = useState(bot?.color || '#4F46E5');
+  const [model, setModel] = useState(bot?.model || MODEL_OPTIONS[0].value);
+
+  useEffect(() => {
+    if (bot) {
+      setName(bot.name);
+      setDescription(bot.description);
+      setSystemPrompt(bot.systemPrompt);
+      setColor(bot.color);
+      setModel(bot.model || MODEL_OPTIONS[0].value);
+    } else {
+      setName('');
+      setDescription('');
+      setSystemPrompt('');
+      setColor('#4F46E5');
+      setModel(MODEL_OPTIONS[0].value);
+    }
+  }, [bot]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,8 +57,8 @@ export const BotSettings = ({ bot, onSave, open, onOpenChange }: BotSettingsProp
       description,
       systemPrompt,
       color,
+      model,
     });
-    onOpenChange(false);
   };
 
   return (
@@ -56,6 +80,21 @@ export const BotSettings = ({ bot, onSave, open, onOpenChange }: BotSettingsProp
               placeholder="Bot name"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="model">Model</Label>
+            <Select value={model} onValueChange={setModel}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                {MODEL_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
