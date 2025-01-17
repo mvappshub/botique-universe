@@ -44,8 +44,35 @@ const Index = () => {
     });
   };
 
-  const handleSendMessage = (content: string) => {
+  const handleUpdateBot = (updatedBot: Bot) => {
+    const updatedBots = bots.map(bot => 
+      bot.id === updatedBot.id ? updatedBot : bot
+    );
+    if (!updatedBots.find(bot => bot.id === updatedBot.id)) {
+      updatedBots.push(updatedBot);
+    }
+    setBots(updatedBots);
+    saveBots(updatedBots);
+    setSelectedBot(updatedBot);
+    
+    toast({
+      title: "Bot Updated",
+      description: "Bot settings have been updated successfully.",
+    });
+  };
+
+  const handleSendMessage = async (content: string) => {
     if (!selectedBot) return;
+
+    const apiKey = localStorage.getItem('api_key');
+    if (!apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please set your API key in the sidebar settings.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const newMessage: Message = {
       id: crypto.randomUUID(),
@@ -54,22 +81,44 @@ const Index = () => {
       timestamp: Date.now(),
     };
 
-    const botResponse: Message = {
-      id: crypto.randomUUID(),
-      content: "I'm a demo bot. Connect an AI model to get real responses!",
-      role: 'assistant',
-      timestamp: Date.now(),
-    };
+    // Add user message immediately
+    const updatedHistory = updateHistory(selectedBot.id, newMessage);
 
-    const botHistory = history.find(h => h.botId === selectedBot.id);
-    const newHistory = botHistory
-      ? history.map(h => h.botId === selectedBot.id
-          ? { ...h, messages: [...h.messages, newMessage, botResponse] }
-          : h)
-      : [...history, { botId: selectedBot.id, messages: [newMessage, botResponse] }];
+    try {
+      // Here you would make the actual API call to your chosen LLM
+      // For now, we'll simulate a response
+      const botResponse: Message = {
+        id: crypto.randomUUID(),
+        content: "I'm a demo bot. Connect an AI model to get real responses!",
+        role: 'assistant',
+        timestamp: Date.now(),
+      };
 
+      // Add bot response to history
+      updateHistory(selectedBot.id, botResponse);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to get response from the AI model.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateHistory = (botId: string, message: Message) => {
+    const newHistory = history.map(h => 
+      h.botId === botId
+        ? { ...h, messages: [...h.messages, message] }
+        : h
+    );
+    
+    if (!newHistory.find(h => h.botId === botId)) {
+      newHistory.push({ botId, messages: [message] });
+    }
+    
     setHistory(newHistory);
     saveHistory(newHistory);
+    return newHistory;
   };
 
   const handleExport = () => {
@@ -113,40 +162,39 @@ const Index = () => {
       <div className="min-h-screen flex w-full">
         <Sidebar className="border-r">
           <SidebarContent>
-            <div className="space-y-4">
-              <BotList
-                bots={bots}
-                selectedBot={selectedBot}
-                onSelectBot={setSelectedBot}
-                onNewBot={handleNewBot}
+            <BotList
+              bots={bots}
+              selectedBot={selectedBot}
+              onSelectBot={setSelectedBot}
+              onNewBot={handleNewBot}
+              onUpdateBot={handleUpdateBot}
+            />
+            <div className="px-4 space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="w-[calc(50%-0.25rem)]"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById('import-file')?.click()}
+                className="w-[calc(50%-0.25rem)]"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+              <input
+                type="file"
+                id="import-file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
               />
-              <div className="px-4 space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExport}
-                  className="w-[calc(50%-0.25rem)]"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('import-file')?.click()}
-                  className="w-[calc(50%-0.25rem)]"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Import
-                </Button>
-                <input
-                  type="file"
-                  id="import-file"
-                  accept=".json"
-                  onChange={handleImport}
-                  className="hidden"
-                />
-              </div>
             </div>
           </SidebarContent>
         </Sidebar>
