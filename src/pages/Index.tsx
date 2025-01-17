@@ -31,6 +31,7 @@ const Index = () => {
       description: "A helpful assistant",
       systemPrompt: "You are a helpful assistant.",
       color: "#4F46E5",
+      model: "openai", // Add default model
     };
     
     const updatedBots = [...bots, newBot];

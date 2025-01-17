@@ -17,6 +17,7 @@ export const loadBots = (): Bot[] => {
       description: "A helpful assistant",
       systemPrompt: "You are a helpful assistant.",
       color: "#4F46E5",
+      model: "openai", // Add default model
     };
     saveBots([defaultBot]);
     return [defaultBot];
