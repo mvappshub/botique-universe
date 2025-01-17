@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Bot, ApiKeys, MODEL_OPTIONS } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Plus, Settings } from 'lucide-react';
+import { MessageCircle, Plus, Settings, Cog } from 'lucide-react';
 import { BotSettings } from './BotSettings';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import { ProviderSettings } from './ProviderSettings';
 import { useToast } from './ui/use-toast';
 
 interface BotListProps {
@@ -17,6 +16,7 @@ interface BotListProps {
 
 export const BotList = ({ bots, selectedBot, onSelectBot, onNewBot, onUpdateBot }: BotListProps) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [providerSettingsOpen, setProviderSettingsOpen] = useState(false);
   const [editingBot, setEditingBot] = useState<Bot | null>(null);
   const { toast } = useToast();
   
@@ -37,12 +37,11 @@ export const BotList = ({ bots, selectedBot, onSelectBot, onNewBot, onUpdateBot 
   };
 
   const handleSaveBot = (bot: Bot) => {
-    // Check if the required API key is set for the selected model
-    const requiredKey = MODEL_OPTIONS.find(m => m.value === bot.model)?.keyName;
-    if (requiredKey && !apiKeys[requiredKey]) {
+    const modelOption = MODEL_OPTIONS.find(m => m.value === bot.model);
+    if (modelOption?.keyName && !apiKeys[modelOption.keyName]) {
       toast({
         title: "Missing API Key",
-        description: `Please set the API key for ${bot.model} before creating a bot using this model.`,
+        description: `Please set the API key for ${modelOption.label} in provider settings.`,
         variant: "destructive",
       });
       return;
@@ -53,42 +52,26 @@ export const BotList = ({ bots, selectedBot, onSelectBot, onNewBot, onUpdateBot 
     setEditingBot(null);
   };
 
-  const handleApiKeyChange = (model: string, value: string) => {
-    const newKeys = { ...apiKeys, [model]: value };
-    setApiKeys(newKeys);
-    localStorage.setItem('api_keys', JSON.stringify(newKeys));
-    
-    toast({
-      title: "API Key Updated",
-      description: `${model.toUpperCase()} API key has been updated.`,
-    });
-  };
-
   return (
     <div className="space-y-4 p-4">
-      <div className="space-y-4">
-        {MODEL_OPTIONS.map((model) => (
-          <div key={model.value} className="space-y-2">
-            <Label htmlFor={`${model.value}Key`}>{model.label} API Key</Label>
-            <Input
-              id={`${model.value}Key`}
-              type="password"
-              value={apiKeys[model.value] || ''}
-              onChange={(e) => handleApiKeyChange(model.value, e.target.value)}
-              placeholder={`Enter your ${model.label} API key`}
-            />
-          </div>
-        ))}
+      <div className="flex justify-between items-center mb-4">
+        <Button 
+          variant="outline" 
+          className="w-full justify-start gap-2" 
+          onClick={handleNewBot}
+        >
+          <Plus className="h-4 w-4" />
+          New Bot
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setProviderSettingsOpen(true)}
+          className="ml-2"
+        >
+          <Cog className="h-4 w-4" />
+        </Button>
       </div>
-      
-      <Button 
-        variant="outline" 
-        className="w-full justify-start gap-2" 
-        onClick={handleNewBot}
-      >
-        <Plus className="h-4 w-4" />
-        New Bot
-      </Button>
 
       <div className="space-y-1">
         {bots.map((bot) => (
@@ -120,6 +103,11 @@ export const BotList = ({ bots, selectedBot, onSelectBot, onNewBot, onUpdateBot 
         onSave={handleSaveBot}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+      />
+
+      <ProviderSettings
+        open={providerSettingsOpen}
+        onOpenChange={setProviderSettingsOpen}
       />
     </div>
   );

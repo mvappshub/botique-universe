@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bot, MODEL_OPTIONS } from '@/lib/types';
+import { Bot, MODEL_OPTIONS, PROVIDERS } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,6 +32,7 @@ export const BotSettings = ({ bot, onSave, open, onOpenChange }: BotSettingsProp
   const [systemPrompt, setSystemPrompt] = useState(bot?.systemPrompt || '');
   const [color, setColor] = useState(bot?.color || '#4F46E5');
   const [model, setModel] = useState(bot?.model || MODEL_OPTIONS[0].value);
+  const [provider, setProvider] = useState(bot?.provider || PROVIDERS[0].id);
 
   useEffect(() => {
     if (bot) {
@@ -39,15 +40,26 @@ export const BotSettings = ({ bot, onSave, open, onOpenChange }: BotSettingsProp
       setDescription(bot.description);
       setSystemPrompt(bot.systemPrompt);
       setColor(bot.color);
-      setModel(bot.model || MODEL_OPTIONS[0].value);
+      setModel(bot.model);
+      setProvider(bot.provider || PROVIDERS[0].id);
     } else {
       setName('');
       setDescription('');
       setSystemPrompt('');
       setColor('#4F46E5');
       setModel(MODEL_OPTIONS[0].value);
+      setProvider(PROVIDERS[0].id);
     }
   }, [bot]);
+
+  const handleProviderChange = (newProvider: string) => {
+    setProvider(newProvider);
+    // Reset model when provider changes
+    const providerModels = MODEL_OPTIONS.filter(m => m.provider === newProvider);
+    if (providerModels.length > 0) {
+      setModel(providerModels[0].value);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +70,11 @@ export const BotSettings = ({ bot, onSave, open, onOpenChange }: BotSettingsProp
       systemPrompt,
       color,
       model,
+      provider
     });
   };
+
+  const filteredModels = MODEL_OPTIONS.filter(m => m.provider === provider);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -82,13 +97,28 @@ export const BotSettings = ({ bot, onSave, open, onOpenChange }: BotSettingsProp
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="provider">Provider</Label>
+            <Select value={provider} onValueChange={handleProviderChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a provider" />
+              </SelectTrigger>
+              <SelectContent>
+                {PROVIDERS.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
             <Select value={model} onValueChange={setModel}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                {MODEL_OPTIONS.map((option) => (
+                {filteredModels.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

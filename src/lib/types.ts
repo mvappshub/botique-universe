@@ -5,6 +5,8 @@ export interface Bot {
   systemPrompt: string;
   color: string;
   model: string;
+  provider?: string;
+  baseUrl?: string;
 }
 
 export interface Message {
@@ -19,16 +21,63 @@ export interface ChatHistory {
   messages: Message[];
 }
 
-export type ModelType = 'openai' | 'anthropic' | 'groq';
-
-export interface ApiKeys {
-  openai?: string;
-  anthropic?: string;
-  groq?: string;
+export interface Provider {
+  id: string;
+  name: string;
+  models: string[];
+  requiresApiKey: boolean;
+  supportsCustomUrl: boolean;
+  baseUrl?: string;
 }
 
-export const MODEL_OPTIONS = [
-  { value: 'openai', label: 'OpenAI', keyName: 'openai' },
-  { value: 'anthropic', label: 'Anthropic', keyName: 'anthropic' },
-  { value: 'groq', label: 'GROQ', keyName: 'groq' },
-] as const;
+export interface ApiKeys {
+  [key: string]: string;
+}
+
+export const PROVIDERS: Provider[] = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    models: ['gpt-4', 'gpt-3.5-turbo'],
+    requiresApiKey: true,
+    supportsCustomUrl: false
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    models: ['claude-3-opus', 'claude-3-sonnet'],
+    requiresApiKey: true,
+    supportsCustomUrl: false
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama',
+    models: ['llama2', 'mistral'],
+    requiresApiKey: false,
+    supportsCustomUrl: true,
+    baseUrl: 'http://localhost:11434'
+  },
+  {
+    id: 'groq',
+    name: 'Groq',
+    models: ['mixtral-8x7b', 'llama2-70b'],
+    requiresApiKey: true,
+    supportsCustomUrl: false
+  },
+  {
+    id: 'mistral',
+    name: 'Mistral',
+    models: ['mistral-tiny', 'mistral-small', 'mistral-medium'],
+    requiresApiKey: true,
+    supportsCustomUrl: false
+  }
+];
+
+export const MODEL_OPTIONS = PROVIDERS.flatMap(provider => 
+  provider.models.map(model => ({
+    value: model,
+    label: `${provider.name} - ${model}`,
+    provider: provider.id,
+    keyName: provider.requiresApiKey ? provider.id : undefined
+  }))
+);
